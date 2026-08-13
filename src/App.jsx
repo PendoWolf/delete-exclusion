@@ -34,9 +34,25 @@ function App() {
       ...current,
     ])
     setText('')
+
+    if (typeof pendo !== 'undefined') {
+      pendo.track('task_added', {
+        taskTextLength: value.length,
+        totalTaskCount: todos.length + 1,
+      })
+    }
   }
 
   function toggleTodo(id) {
+    const todo = todos.find((t) => t.id === id)
+    if (todo && !todo.done && typeof pendo !== 'undefined') {
+      const doneCount = todos.filter((t) => t.done).length
+      pendo.track('task_completed', {
+        remainingCount: todos.length - doneCount - 1,
+        completedCount: doneCount + 1,
+        totalTaskCount: todos.length,
+      })
+    }
     setTodos((current) =>
       current.map((todo) =>
         todo.id === id ? { ...todo, done: !todo.done } : todo,
@@ -45,10 +61,25 @@ function App() {
   }
 
   function deleteTodo(id) {
+    const todo = todos.find((t) => t.id === id)
+    if (todo && typeof pendo !== 'undefined') {
+      pendo.track('task_deleted', {
+        wasCompleted: todo.done,
+        remainingCount: todos.filter((t) => !t.done).length - (todo.done ? 0 : 1),
+        totalTaskCount: todos.length - 1,
+      })
+    }
     setTodos((current) => current.filter((todo) => todo.id !== id))
   }
 
   function clearCompleted() {
+    if (typeof pendo !== 'undefined') {
+      const doneCount = todos.filter((t) => t.done).length
+      pendo.track('completed_tasks_cleared', {
+        clearedCount: doneCount,
+        remainingCount: todos.length - doneCount,
+      })
+    }
     setTodos((current) => current.filter((todo) => !todo.done))
   }
 
